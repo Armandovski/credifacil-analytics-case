@@ -1,0 +1,20 @@
+version: 2
+
+sources:
+  - name: bronze
+    schema: main
+    tables:
+      - name: customers_raw
+        description: "Camada Bronze (Parquet) - clientes (raw)."
+        external:
+          location: "{{ env_var('BRONZE_DIR', './data/bronze') }}/customers/**/*.parquet"
+
+      - name: loans_raw
+        description: "Camada Bronze (Parquet) - contratos (raw)."
+        external:
+          location: "{{ env_var('BRONZE_DIR', './data/bronze') }}/loans/**/*.parquet"
+
+      - name: payments_raw
+        description: "Camada Bronze (Parquet) - pagamentos (raw)."
+        external:
+          location: "{{ env_var('BRONZE_DIR', './data/bronze') }}/payments/**/*.parquet"

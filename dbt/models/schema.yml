@@ -1,0 +1,69 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: "Clientes limpos (Silver)."
+    columns:
+      - name: customer_id
+        tests:
+          - not_null
+          - unique
+
+  - name: stg_loans
+    description: "Contratos de crédito limpos (Silver)."
+    columns:
+      - name: loan_id
+        tests:
+          - not_null
+          - unique
+      - name: prazo_meses
+        description: "Prazo em meses (com trim + try_cast no staging)."
+        tests:
+          - not_null
+
+  - name: stg_payments
+    description: "Pagamentos limpos (Silver)."
+    columns:
+      - name: payment_id
+        tests:
+          - not_null
+          - unique
+
+  - name: int_installments
+    description: "Parcelas consolidadas (grade esperada + pagamentos)."
+    columns:
+      - name: loan_id
+        tests:
+          - not_null
+      - name: numero_parcela
+        tests:
+          - not_null
+      - name: data_vencimento
+        tests:
+          - not_null
+
+  - name: int_loan_performance
+    description: "Snapshot de performance por contrato na data de corte."
+    columns:
+      - name: loan_id
+        tests:
+          - not_null
+          - unique
+
+  - name: mart_credit_installments
+    description: "Mart Gold no grão de parcela (cobrança/aging)."
+    columns:
+      - name: loan_id
+        tests:
+          - not_null
+      - name: customer_id
+        tests:
+          - not_null
+
+  - name: mart_credit_loans
+    description: "Mart Gold no grão de contrato (risco/produto)."
+    columns:
+      - name: loan_id
+        tests:
+          - not_null
+          - unique

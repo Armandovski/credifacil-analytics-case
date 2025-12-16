@@ -1,0 +1,8 @@
+services:
+  credifacil-ae:
+    build: .
+    environment:
+      - AS_OF_DATE=${AS_OF_DATE:-2025-12-04}
+    volumes:
+      - ./input:/app/input
+      - ./output:/app/output
