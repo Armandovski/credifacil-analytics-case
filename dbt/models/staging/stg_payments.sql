@@ -20,7 +20,6 @@ normalizado as (
 ),
 
 deduplicado as (
-  -- Mantém somente a linha mais recente por payment_id
   select *
   from (
     select
@@ -30,9 +29,11 @@ deduplicado as (
         order by data_ingestao desc nulls last
       ) as rn
     from normalizado
+    where data_ingestao <= {{ data_referencia() }}
   )
   where rn = 1
 ),
+
 
 tipado as (
   select

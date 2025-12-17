@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Dict
 
 import pandas as pd
+from dotenv import load_dotenv
 
 
 def _hoje_str() -> str:
@@ -87,8 +88,11 @@ def main() -> int:
 
     Lê input/*.csv e materializa Bronze em data/bronze/*/*.parquet
     """
-    pasta_input = Path(os.getenv("INPUT_DIR", "/app/input"))
-    pasta_bronze = Path(os.getenv("BRONZE_DIR", "/app/data/bronze"))
+    load_dotenv()
+
+    data_dir = Path(os.getenv("DATA_DIR", "./data"))
+    pasta_input = Path(os.getenv("INPUT_DIR", "./input"))
+    pasta_bronze = Path(os.getenv("BRONZE_DIR", data_dir / "bronze"))
 
     ingestion_date = os.getenv("INGESTION_DATE", _hoje_str())
 

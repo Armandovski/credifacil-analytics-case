@@ -24,6 +24,7 @@ def main() -> None:
         "mart_credit_installments": diretorio_saida / "mart_credit_installments.csv",
         "mart_credit_loans": diretorio_saida / "mart_credit_loans.csv",
         "mart_kpis_daily": diretorio_saida / "mart_kpis_daily.csv",
+        "mart_kpis_vintage": diretorio_saida / "mart_kpis_vintage.csv"
     }
 
     for nome_tabela, caminho_csv in exports.items():

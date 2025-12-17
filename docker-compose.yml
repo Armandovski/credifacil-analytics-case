@@ -6,3 +6,4 @@ services:
     volumes:
       - ./input:/app/input
       - ./output:/app/output
+      - ./data:/app/data

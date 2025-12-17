@@ -12,8 +12,9 @@ base_parcelas as (
 ),
 
 data_ref as (
-  select current_date as data_referencia
+  select {{ data_referencia() }} as data_referencia
 ),
+
 
 kpis as (
 
@@ -82,6 +83,29 @@ kpis as (
       as double
     ) as kpi_valor,
     'Razão entre valor pago e valor devido (proxy de yield realizado) nas parcelas observadas.' as kpi_descricao
+  from base_parcelas bp
+  cross join data_ref dr
+
+    union all
+
+  -- KPI 6: Taxa de pagamento em dia (parcelas)
+  select
+    any_value(dr.data_referencia) as data_referencia,
+    'pct_parcelas_pagas_em_dia' as kpi_nome,
+    cast(
+      sum(
+        case
+          when status_parcela = 'pago_integral' and dpd_efetivo <= 0 then 1 else 0
+        end
+      ) * 1.0
+      /
+      nullif(
+        sum(case when data_vencimento <= dr.data_referencia then 1 else 0 end),
+        0
+      )
+      as double
+    ) as kpi_valor,
+    'Percentual de parcelas vencidas que foram pagas integralmente até a data de vencimento.' as kpi_descricao
   from base_parcelas bp
   cross join data_ref dr
 )
