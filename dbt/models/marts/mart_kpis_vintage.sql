@@ -1,16 +1,29 @@
 -- Mart de KPIs de Vintage (Gold)
--- Grão: coorte_origem_mes + idade_meses + kpi_nome
+-- Grão: data_referencia + coorte_origem_mes + idade_meses + kpi_nome
 -- KPI: vintage_default_90 = % de contratos que já atingiram default 90+ até a idade M
+{{ config(
+    materialized='incremental',
+    incremental_strategy='delete+insert',
+    unique_key=['data_referencia', 'coorte_origem_mes', 'idade_meses', 'kpi_nome']
+) }}
 
 with parametros as (
+  -- Quantos "meses de idade" queremos calcular no vintage
   select 12 as max_idade_meses
 ),
 
+-- Data de referência do snapshot (as-of). Vem de --vars no dbt.
+data_ref as (
+  select {{ data_referencia() }} as data_referencia
+),
+
+-- Gera a lista de idades (1..N)
 idades as (
   select range as idade_meses
   from range(1, (select max_idade_meses from parametros) + 1)
 ),
 
+-- Base de empréstimos (coorte por mês de concessão)
 loans as (
   select
     loan_id,
@@ -20,6 +33,7 @@ loans as (
   where data_concessao is not null
 ),
 
+-- Base de parcelas (observadas)
 parcelas as (
   select
     loan_id,
@@ -31,15 +45,16 @@ parcelas as (
 ),
 
 -- Momento em que cada parcela "cruza" 90 dias de atraso
+-- Observação:
+-- - Se a parcela foi paga com 90+ dias de atraso, considera-se que ela cruzou 90d em (data_vencimento + 90 dias)
+-- - Se não foi paga e já tem >= 90 dias até a data de referência, considera-se que cruzou 90d em (data_vencimento + 90 dias)
 parcelas_com_default_90 as (
   select
     loan_id,
     case
-      -- Parcela paga com 90+ dias de atraso
       when data_pagamento is not null and dpd_efetivo >= 90
         then cast(data_vencimento + interval '90 day' as date)
 
-      -- Parcela ainda não paga e já tem 90+ dias em aberto na data de referência
       when data_pagamento is null
            and date_diff('day', data_vencimento, {{ data_referencia() }}) >= 90
         then cast(data_vencimento + interval '90 day' as date)
@@ -62,6 +77,7 @@ default_por_loan as (
   group by 1,2,3
 ),
 
+-- Calcula o vintage por coorte e idade
 vintage as (
   select
     d.coorte_origem_mes,
@@ -71,7 +87,7 @@ vintage as (
     cast(
       sum(
         case
-          -- elegível e já entrou em default 90+ até a idade M
+          -- Elegível na idade M e já entrou em default 90+ até a idade M
           when cast(d.data_concessao + (i.idade_meses * interval '1 month') as date) <= {{ data_referencia() }}
                and d.data_default_90 is not null
                and d.data_default_90 <= cast(d.data_concessao + (i.idade_meses * interval '1 month') as date)
@@ -82,7 +98,7 @@ vintage as (
       nullif(
         sum(
           case
-            -- elegível (já atingiu a idade M)
+            -- Elegível (já atingiu a idade M)
             when cast(d.data_concessao + (i.idade_meses * interval '1 month') as date) <= {{ data_referencia() }}
               then 1 else 0
           end
@@ -99,4 +115,13 @@ vintage as (
   group by 1,2,3,5
 )
 
-select * from vintage
+-- Inclui a data do snapshot como coluna (necessário para histórico incremental)
+select
+  dr.data_referencia,
+  v.coorte_origem_mes,
+  v.idade_meses,
+  v.kpi_nome,
+  v.kpi_valor,
+  v.kpi_descricao
+from vintage v
+cross join data_ref dr

@@ -1,6 +1,13 @@
 -- Mart de KPIs diários (Gold)
 -- Grão: data_referencia + kpi_nome
 
+{{ config(
+    materialized='incremental',
+    incremental_strategy='delete+insert',
+    unique_key=['data_referencia', 'kpi_nome']
+) }}
+
+
 with base_loans as (
   select *
   from {{ ref('mart_credit_loans') }}
