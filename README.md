@@ -68,3 +68,33 @@ docker compose up --build
 - `docs/`: decisões e arquitetura (GCP → Databricks)
 
 Veja mais detalhes em `docs/ARQUITETURA.md`.
+
+## Métricas e Indicadores de Crédito (KPIs)
+
+Esta entrega inclui uma camada de *marts* (Gold) com KPIs de risco e performance para apoiar decisões dos times de **Risco**, **Cobrança** e **Produto**. Os KPIs são calculados como **snapshot** na `data_referencia` (parametrizada, tipicamente alinhada à `ingestion_date`), permitindo reprocessamento e backfill para datas específicas.
+
+### Onde os KPIs são calculados
+
+- **`mart_kpis_daily`**: KPIs agregados do portfólio (snapshot diário).
+  - **Grão**: `data_referencia + kpi_nome`
+- **`mart_kpis_vintage`**: KPIs por safra (coorte) e idade do contrato.
+  - **Grão**: `data_referencia + coorte_origem_mes + idade_meses + kpi_nome`
+
+### Tabela de KPIs
+
+| Métrica (kpi_nome) | Descrição (o que mede) |
+|---|---|
+| **taxa_inadimplencia_contratos** | Percentual de contratos em inadimplência (usando **status derivado** e/ou critério de **DPD ≥ 90**). |
+| **par30_valor_em_aberto** | Soma do **valor em aberto** de parcelas com **DPD ≥ 30** (proxy de **PAR30**). |
+| **par90_valor_em_aberto** | Soma do **valor em aberto** de parcelas com **DPD ≥ 90** (proxy de **PAR90**). |
+| **pct_clientes_multiplos_contratos** | Percentual de clientes com **mais de um contrato** (indicador de concentração de risco em recorrentes). |
+| **yield_efetivo_aprox** | Razão entre **valor pago** e **valor devido** nas parcelas observadas (proxy de yield/realização financeira). |
+| **pct_parcelas_pagas_em_dia** | Percentual de parcelas vencidas que foram **pagas em dia** (indicador de disciplina de pagamento e/ou efetividade de cobrança). |
+| **vintage_default_90** | Taxa de default (**90+ DPD**) por **coorte de originação** e **idade do contrato (meses)**, para acompanhar deterioração por safra ao longo do tempo. |
+
+### Observações e premissas importantes
+
+- **DPD / default 90+**: o conceito de inadimplência severa é tratado como **DPD ≥ 90** (e/ou status derivado equivalente), coerente com a métrica sugerida no enunciado.
+- **PAR30/PAR90**: como este é um case simplificado (sem saldo contábil de principal/juros por contrato), o PAR foi aproximado via **`valor_em_aberto`** das parcelas com atraso acima do threshold.
+- **Yield efetivo**: usado como proxy simples para “realização financeira” a partir de **pagamentos observados**, não como taxa interna de retorno (TIR).
+- **Vintage**: o `vintage_default_90` mede a proporção de contratos que **já** atingiram default 90+ **até** a idade M (em meses), por coorte de originação, respeitando a `data_referencia` do snapshot.
