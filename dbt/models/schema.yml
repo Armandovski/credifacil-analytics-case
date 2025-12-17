@@ -67,3 +67,34 @@ models:
         tests:
           - not_null
           - unique
+
+  - name: mart_kpis_daily
+    description: "KPIs diários de performance e risco. Grão: data_referencia + kpi_nome."
+    columns:
+      - name: data_referencia
+        description: "Data do snapshot (as-of)."
+        tests: [not_null]
+      - name: kpi_nome
+        description: "Identificador do KPI."
+        tests: [not_null]
+      - name: kpi_valor
+        description: "Valor numérico do KPI."
+      - name: kpi_descricao
+        description: "Definição do KPI."
+
+  - name: mart_kpis_vintage
+    description: "KPIs de vintage por coorte de originação. Grão: coorte_origem_mes + idade_meses + kpi_nome."
+    columns:
+      - name: coorte_origem_mes
+        description: "Mês de originação do contrato (date_trunc('month', data_concessao))."
+        tests: [not_null]
+      - name: idade_meses
+        description: "Idade do contrato em meses na data de referência."
+        tests: [not_null]
+      - name: kpi_nome
+        description: "Identificador do KPI (ex.: vintage_default_90)."
+        tests: [not_null]
+      - name: kpi_valor
+        description: "Valor numérico do KPI (taxa)."
+      - name: kpi_descricao
+        description: "Definição do KPI."

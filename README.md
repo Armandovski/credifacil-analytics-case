@@ -15,6 +15,7 @@ Principais marts:
 - `mart_credit_installments` (grão: parcela)
 - `mart_credit_loans` (grão: contrato)
 - `mart_kpis_daily` (grão: dia)
+- `mart_kpis_vintage` (grão: coorte_origem_mes + idade_meses + kpi_nome)
 
 ## Como rodar (local)
 
@@ -34,6 +35,7 @@ Saídas:
 - `output/mart_credit_installments.csv`
 - `output/mart_credit_loans.csv`
 - `output/mart_kpis_daily.csv`
+- `output/mart_kpis_vintage.csv`
 
 ## Como rodar (Docker)
 
